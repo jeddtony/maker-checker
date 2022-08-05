@@ -43,4 +43,39 @@ class AuthController extends Controller
         ];
         return $this->formatCreatedResponse('Registration successful', $data);
     }
+
+
+    /**
+    *
+    * @param  Request  $request
+    * @return Response
+    */
+    public function login(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'email'    => 'required',
+            'password' => 'required'
+        ]);
+
+        if($validator->fails()) {
+            return $this->formatInputErrorResponse($validator->errors()->first());
+        }
+
+        $loginData = ['email' => $request->email, 'password' => $request->password];
+
+        if (!auth()->attempt($loginData)) {
+            return response(['message' => 'Invalid Credentials']);
+        }
+
+        $accessToken = $request->user()->createToken('authToken')->plainTextToken;
+
+        $data = [
+            'user' => auth()->user(),
+            'access_token' => $accessToken
+        ];
+        
+        return $this->formatSuccessResponse('Login successful', $data);
+
+    }
 }

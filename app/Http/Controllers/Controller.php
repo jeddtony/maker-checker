@@ -12,7 +12,7 @@ class Controller extends BaseController
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
 
-    public function formatSuccessResponse(string $message, mixed $data)
+    public function formatSuccessResponse(string $message, $data)
     {
         return response()->json(
             ['status' => true, 'message' => $message, 'data' => $data], 200);
