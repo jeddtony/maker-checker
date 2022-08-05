@@ -23,4 +23,12 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('/register', [AuthController::class, 'register']);
 
     Route::post('/login', [AuthController::class, 'login']);
+
+    Route::get('/login', function () {
+        return response()->json('Invalid auth', 401);
+    })->name('login');
+
+    Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
 });
