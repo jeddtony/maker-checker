@@ -46,7 +46,7 @@ class AuthController extends Controller
 
 
     /**
-    *
+    * Login user.
     * @param  Request  $request
     * @return Response
     */
@@ -77,5 +77,18 @@ class AuthController extends Controller
         
         return $this->formatSuccessResponse('Login successful', $data);
 
+    }
+
+    /**
+    * Logout user.
+    * @param  Request  $request
+    * @return Response
+    */
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+        return response()->json([
+            'message' => 'Successfully logged out'
+        ]);
     }
 }
