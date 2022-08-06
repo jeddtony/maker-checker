@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\AdminAction\Actio;
 
 class PendingRequestController extends Controller
 {
@@ -31,18 +32,21 @@ class PendingRequestController extends Controller
     public function actionAnAdminRequest(Request $request, $uuid)
     {
         $action = $request->action;
-        dd($action);
 
         $pendingRequest = PendingRequest::where('uuid', $uuid)->first();
 
         if ($action == 'approve') {
             $pendingRequest->status = 'approved';
             $pendingRequest->save();
-            // act on the request based on the request type
+
+            $class = $this->serializeRequestType($pendingRequest->request_type);
+            $class->execute($pendingRequest);
+
             return $this->formatSuccessResponse('Request approved', $pendingRequest);
         } elseif ($action == 'reject') {
             $pendingRequest->status = 'rejected';
             $pendingRequest->save();
+            $pendingRequest->delete();
             return $this->formatSuccessResponse('Request rejected', $pendingRequest);
         } else {
             return $this->formatInputErrorResponse('Invalid action');
@@ -50,35 +54,9 @@ class PendingRequestController extends Controller
 
     }
 
-    public function executeRequestType($requestType, PendingRequest $pendingRequest){
-
-        
-        switch ($requestType){
-            case 'create':
-                $user = User::create([
-                    'first_name' => $pendingRequest->first_name,
-                    'last_name' => $pendingRequest->last_name,
-                    'email' => $pendingRequest->email,
-                    'password' => $pendingRequest->password,
-                    'uuid' => Str::uuid()
-                ]);
-                // create new user
-                break;
-            case 'update':
-                // update user
-                $user = User::where('uuid', $pendingRequest->user_uuid)->first();
-
-                $user->first_name = $pendingRequest->first_name;
-                $user->last_name = $pendingRequest->last_name;
-                $user->email = $pendingRequest->email;
-                $user->save();
-                break;
-            case 'delete':
-                // delete user
-                break;
-            default:
-                return $this->formatInputErrorResponse('Invalid request type');
-        }
+    public function serializeRequestType ($requestType){
+        $class = 'App\AdminAction\\' . ucfirst($requestType) . 'Action';
+        return new $class;
     }
 
     /**
@@ -208,9 +186,7 @@ class PendingRequestController extends Controller
             'admin_uuid' => request()->user()->uuid,
             'user_uuid' => $user->uuid,
         ]);
-
-        // Todo:: when a delete is approved the user uuid should be marked as a soft delete
-
+        
         return $this->formatSuccessResponse('User deletion request awaiting approval', $pending);
         
     }
