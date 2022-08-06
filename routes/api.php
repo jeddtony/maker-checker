@@ -43,6 +43,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::put('/{uuid}', [PendingRequestController::class, 'update']);
             Route::delete('/{uuid}', [PendingRequestController::class, 'destroy']);
        
+            Route::patch('/{uuid}/action', [PendingRequestController::class, 'actionAnAdminRequest']);
         });
     });
 });

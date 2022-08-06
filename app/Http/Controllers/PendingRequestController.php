@@ -18,9 +18,67 @@ class PendingRequestController extends Controller
     public function index()
     {
         //
-        $pendingRequest = PendingRequest::where('status', 'pending')->get();
+        $pendingRequest = PendingRequest::with('user')->where('status', 'pending')->get();
 
         return $this->formatSuccessResponse('Pending requests', $pendingRequest);
+    }
+
+     /**
+     * Action a pending request.
+     * @param  $uuid
+     * @return \Illuminate\Http\Response
+     */
+    public function actionAnAdminRequest(Request $request, $uuid)
+    {
+        $action = $request->action;
+        dd($action);
+
+        $pendingRequest = PendingRequest::where('uuid', $uuid)->first();
+
+        if ($action == 'approve') {
+            $pendingRequest->status = 'approved';
+            $pendingRequest->save();
+            // act on the request based on the request type
+            return $this->formatSuccessResponse('Request approved', $pendingRequest);
+        } elseif ($action == 'reject') {
+            $pendingRequest->status = 'rejected';
+            $pendingRequest->save();
+            return $this->formatSuccessResponse('Request rejected', $pendingRequest);
+        } else {
+            return $this->formatInputErrorResponse('Invalid action');
+        }
+
+    }
+
+    public function executeRequestType($requestType, PendingRequest $pendingRequest){
+
+        
+        switch ($requestType){
+            case 'create':
+                $user = User::create([
+                    'first_name' => $pendingRequest->first_name,
+                    'last_name' => $pendingRequest->last_name,
+                    'email' => $pendingRequest->email,
+                    'password' => $pendingRequest->password,
+                    'uuid' => Str::uuid()
+                ]);
+                // create new user
+                break;
+            case 'update':
+                // update user
+                $user = User::where('uuid', $pendingRequest->user_uuid)->first();
+
+                $user->first_name = $pendingRequest->first_name;
+                $user->last_name = $pendingRequest->last_name;
+                $user->email = $pendingRequest->email;
+                $user->save();
+                break;
+            case 'delete':
+                // delete user
+                break;
+            default:
+                return $this->formatInputErrorResponse('Invalid request type');
+        }
     }
 
     /**
