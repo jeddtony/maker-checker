@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PendingRequestController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -34,5 +35,14 @@ Route::group(['prefix' => 'v1'], function () {
         });
 
         Route::get('/logout', [AuthController::class, 'logout']);
+
+        Route::group(['prefix' => 'pending-request'], function(){
+            Route::get('/', [PendingRequestController::class, 'index']);
+            Route::post('/', [PendingRequestController::class, 'store']);
+            Route::get('/{uuid}', [PendingRequestController::class, 'show']);
+            Route::put('/{uuid}', [PendingRequestController::class, 'update']);
+            Route::delete('/{uuid}', [PendingRequestController::class, 'destroy']);
+       
+        });
     });
 });
