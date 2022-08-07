@@ -29,6 +29,8 @@ This uses Sanctum for authentication.
 ## Constraints
 This code did not take into consideration the size of the DB. As a result, no pagination was done in the responses. 
 
+No admin middleware was set up because this code as built be used only by admins.
+
 Queues were not used in order to prevent issues that might arise as a result of setting up queues and running jobs on queues. 
 
 It also uses soft deletes for deleting data.
