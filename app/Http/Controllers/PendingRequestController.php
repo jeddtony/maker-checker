@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\PendingRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use App\Models\User;
-use App\AdminAction\Actio;
+use App\Events\RequestMade;
+use App\Uuid\CustomUuid;
 
 class PendingRequestController extends Controller
 {
@@ -44,8 +44,8 @@ class PendingRequestController extends Controller
 
             return $this->formatSuccessResponse('Request approved', $pendingRequest);
         } elseif ($action == 'reject') {
-            $pendingRequest->status = 'rejected';
-            $pendingRequest->save();
+            // $pendingRequest->status = 'rejected';
+            // $pendingRequest->save();
             $pendingRequest->delete();
             return $this->formatSuccessResponse('Request rejected', $pendingRequest);
         } else {
@@ -90,12 +90,12 @@ class PendingRequestController extends Controller
 
         $validatedData = $request->all();
         $validatedData['password'] = bcrypt($request->password);
-        $validatedData['uuid'] = Str::uuid();
+        $validatedData['uuid'] = CustomUuid::generateUuid('PendingRequest');
         $validatedData['request_type'] = 'create';
         $validatedData['admin_uuid'] = request()->user()->uuid;
-
         $pendingRequest = PendingRequest::create($validatedData);
 
+        RequestMade::dispatch($pendingRequest);
         return $this->formatCreatedResponse('User creation request awaiting approval', $pendingRequest);
     }
 
@@ -108,11 +108,11 @@ class PendingRequestController extends Controller
     public function show($uuid)
     {
         //
-        $pendingRequest = PendingRequest::where('uuid', $uuid)->first();
+        $pendingRequest = PendingRequest::where('uuid', $uuid)->where('status', 'pending')->first();
         if (!$pendingRequest) {
-            return $this->notFoundResponse('User not found');
+            return $this->notFoundResponse('Request not found or it has been approved or rejected');
         }
-        return $this->formatSuccessResponse('User found', $pendingRequest);
+        return $this->formatSuccessResponse('Request found', $pendingRequest);
     }
 
     /**
@@ -154,11 +154,14 @@ class PendingRequestController extends Controller
 
         $validatedData = $request->all();
         $validatedData['request_type'] = 'update';
-        $validatedData['uuid'] = Str::uuid();
+        $validatedData['uuid'] = CustomUuid::generateUuid('PendingRequest');
         $validatedData['admin_uuid'] = request()->user()->uuid;
         $validatedData['user_uuid'] = $user->uuid;
 
         $pendingRequest = PendingRequest::create($validatedData);
+
+        RequestMade::dispatch($pendingRequest);
+
         return $this->formatCreatedResponse('User update awaiting approval', $pendingRequest);
     }
 
@@ -181,12 +184,14 @@ class PendingRequestController extends Controller
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'email' => $user->email,
-            'uuid' => Str::uuid(),
+            'uuid' => CustomUuid::generateUuid('PendingRequest'),
             'request_type' => 'delete',
             'admin_uuid' => request()->user()->uuid,
             'user_uuid' => $user->uuid,
         ]);
         
+        RequestMade::dispatch($pendingRequest);
+
         return $this->formatSuccessResponse('User deletion request awaiting approval', $pending);
         
     }
