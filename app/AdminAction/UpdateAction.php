@@ -9,7 +9,7 @@ class UpdateAction implements ActionInterface
 {
     public function execute(PendingRequest $pendingRequest)
     {
-        $user = User::find($pendingRequest->user_id);
+        $user = User::find($pendingRequest->user_uuid);
         $user->first_name = $pendingRequest->first_name;
         $user->last_name = $pendingRequest->last_name;
         $user->email = $pendingRequest->email;
